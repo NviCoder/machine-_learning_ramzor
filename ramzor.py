@@ -37,6 +37,8 @@ data_pop = pd.read_csv("population.csv", sep=",", header=0)
 #drop cities with no data about population
 data_pop = data_pop.dropna(subset=['popTot'])
 data_covid = data_covid.drop(data_covid[~data_covid.City_Code.isin(data_pop.city_code)].index)
+#drop rows with <15 verified
+data_covid.drop(data_covid[(data_covid['Cumulative_verified_cases']  < 15)].index, inplace=True)
 data_covid.reset_index(drop=True, inplace=True)
 
 

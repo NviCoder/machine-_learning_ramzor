@@ -10,9 +10,10 @@ from sklearn.svm import SVR
 
 #select params
 city_code = 5000
-window_size = 7
+window_size = 3
 look_forward = 3
 train_ratio = 0.75
+date_start_test = '2020-12-19'
 #model_type = "random forest"
 #model_type = "linear regression"
 model_type = "svm"
@@ -149,7 +150,7 @@ def train_by_cities_list(cities):
 ds = pd.read_csv("ramzor2.csv", sep=",", header=0)
 trainX, trainy, testX, testy = one_city_train_test(city_code)
 #trainX, trainy = all_cities_train()
-trainX, trainy = knn_cities_train(city_code, 7)
+#trainX, trainy = knn_cities_train(city_code, 7)
 
 # Select model
 if model_type == "random forest":
