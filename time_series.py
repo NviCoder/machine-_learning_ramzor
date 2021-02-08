@@ -13,7 +13,7 @@ city_code = 5000
 window_size = 3
 look_forward = 3
 train_ratio = 0.75
-date_start_test = '2020-12-19'
+split_date = None
 #model_type = "random forest"
 #model_type = "linear regression"
 model_type = "svm"
@@ -107,6 +107,7 @@ class AsLastColumn:
 
 def read_pop():
     data_pop = pd.read_csv("population.csv", sep=",", header=0)
+    # TODO drop cities not in ds_city
     return data_pop.dropna(subset=['popTot'])
 
 def get_all_cities_list():
@@ -115,9 +116,19 @@ def get_all_cities_list():
 def one_city_train_test(city_code):
     ds_city = filter_by_city(city_code)
     ds_city.drop(['index','City_Code','Cumulative_verified_cases','Cumulated_number_of_tests','Ni','Pi','Gi'], axis='columns', inplace=True)
+
+    # First time: set split date by the ratio. More times: set ratio by split date.
+    global split_date
+    if (split_date == None):
+        split_date = ds_city.iloc[int(len(ds_city) * train_ratio)]['Date']
+        current_ratio = train_ratio
+    else:
+        fist_test_row = ds_city.index[ds_city['Date'] == split_date].to_list()[0]
+        current_ratio = (fist_test_row - ds_city.index.to_list()[0]) / float(len(ds_city))
+
     ds_city.set_index('Date', inplace=True)
     ds_city = series_to_supervised(ds_city, window_size, look_forward)
-    return split_train_test(ds_city, train_ratio, look_forward)
+    return split_train_test(ds_city, current_ratio, look_forward)
 
 def all_cities_train():
     return train_by_cities_list(get_all_cities_list())
@@ -150,7 +161,7 @@ def train_by_cities_list(cities):
 ds = pd.read_csv("ramzor2.csv", sep=",", header=0)
 trainX, trainy, testX, testy = one_city_train_test(city_code)
 #trainX, trainy = all_cities_train()
-#trainX, trainy = knn_cities_train(city_code, 7)
+#trainX, trainy = knn_cities_train(city_code, 3)
 
 # Select model
 if model_type == "random forest":
@@ -169,8 +180,8 @@ if model_type == "random forest":
     print('importances', model.feature_importances_) # optional to RandomForestRegressor
 
 #prediction
-#predictions = predict_static(model, testX)
-predictions = predict_adaptive(model, trainX, trainy, testX, testy)
+predictions = predict_static(model, testX)
+#predictions = predict_adaptive(model, trainX, trainy, testX, testy)
 
 error = mean_squared_error(testy, predictions)
 print("model error:", error)
