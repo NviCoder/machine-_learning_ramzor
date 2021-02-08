@@ -9,13 +9,13 @@ from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 
 #select params
-city_code = 3795
+city_code = 5000
 window_size = 7
 look_forward = 3
-train_ratio = 0.05
+train_ratio = 0.75
 #model_type = "random forest"
-model_type = "linear regression"
-#model_type = "svm"
+#model_type = "linear regression"
+model_type = "svm"
 
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
     """
@@ -149,7 +149,7 @@ def train_by_cities_list(cities):
 ds = pd.read_csv("ramzor2.csv", sep=",", header=0)
 trainX, trainy, testX, testy = one_city_train_test(city_code)
 #trainX, trainy = all_cities_train()
-#trainX, trainy = knn_cities_train(city_code, 50)
+trainX, trainy = knn_cities_train(city_code, 7)
 
 # Select model
 if model_type == "random forest":
@@ -157,8 +157,7 @@ if model_type == "random forest":
 elif model_type == "linear regression":
     model = LinearRegression()
 elif model_type == "svm":
-    #TODO
-    pass
+    model = SVR(kernel='rbf', C=100, gamma='scale', epsilon=.1)
 else:
     print("model_type error")
     exit(-1)

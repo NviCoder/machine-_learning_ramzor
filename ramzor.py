@@ -24,7 +24,7 @@ if csv_ver30122020:
     data_covid.drop(["City_Name", "Cumulated_recovered", "Cumulated_deaths", "Cumulated_number_of_diagnostic_tests"],
                     axis='columns', inplace=True)
 else:
-    data_covid = pd.read_csv("corona_city_table_ver_03022021.csv", sep=",", header=0)
+    data_covid = pd.read_csv("corona_city_table_ver_08022021.csv", sep=",", header=0)
     data_covid.drop(["City_Name", "Cumulated_recovered", "Cumulated_deaths", "Cumulated_number_of_diagnostic_tests", "colour","final_score"],
                     axis='columns', inplace=True)
 
@@ -67,4 +67,4 @@ for index, row in data_covid.iterrows():
 if csv_ver30122020:
     data_covid.to_csv('ramzor.csv', sep=',')
 else:
-    data_covid.to_csv('ramzor2.csv', sep=',')
+    data_covid.to_csv('ramzor2.csv', sep=',', index_label='index')
