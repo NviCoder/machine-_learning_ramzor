@@ -9,7 +9,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 
 #select params
-city_code = 5000
+city_code = 473
 window_size = 3
 look_forward = 3
 train_ratio = 0.75
@@ -20,7 +20,8 @@ model_type = "svm"
 
 #read data set
 ds = pd.read_csv("ramzor2.csv", sep=",", header=0)
-
+proc_pop = pd.read_csv("population_for_cpa.csv", sep=",", header=0)
+proc_pop.set_index('city_code', inplace=True)
 
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
     """
@@ -138,11 +139,9 @@ def all_cities_train():
     return train_by_cities_list(get_all_cities_list())
 
 def l2_cities(city_code1, city_code2):
-    #read_pop()
-    #TODO
-    def l_2(x, y):
-        return math.sqrt(sum(map(lambda a, b: (a - b) ** 2, x, y)))
-    return l_2([city_code1], [city_code2])
+    vec1 = proc_pop.loc[city_code1]
+    vec2 = proc_pop.loc[city_code2]
+    return mean_squared_error(vec1, vec2)
 
 def knn_cities_train(city_code, top_k):
     cities = get_all_cities_list()
@@ -164,7 +163,7 @@ def train_by_cities_list(cities):
 # Split train-test
 trainX, trainy, testX, testy = one_city_train_test(city_code)
 #trainX, trainy = all_cities_train()
-#trainX, trainy = knn_cities_train(city_code, 3)
+trainX, trainy = knn_cities_train(city_code, 3)
 
 # Select model
 if model_type == "random forest":
