@@ -7,16 +7,37 @@ from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import LSTM
 
 #select params
 city_code = 473
 window_size = 3
-look_forward = 3
+look_forward = 7
 train_ratio = 0.75
 split_date = None
 #model_type = "random forest"
 #model_type = "linear regression"
 model_type = "svm"
+#model_type = "lstm"
+
+def select_model(model_type):
+    if model_type == "random forest":
+        return RandomForestRegressor(n_estimators=100, criterion='mse',
+                                      min_samples_split=math.ceil(math.log2(trainX.size)))
+    elif model_type == "linear regression":
+        return LinearRegression()
+    elif model_type == "svm":
+        return SVR(kernel='rbf', C=100, gamma='scale', epsilon=.1)
+    elif model_type == "lstm":
+        # create LSTM network
+        model = Sequential()
+        model.add(LSTM(4, input_shape=(1, window_size)))
+        model.add(Dense(1))
+        model.compile(loss='mean_squared_error', optimizer='adam')
+    print("model_type error")
+    return None
 
 #read data set
 ds = pd.read_csv("ramzor2.csv", sep=",", header=0)
@@ -165,19 +186,13 @@ trainX, trainy, testX, testy = one_city_train_test(city_code)
 #trainX, trainy = all_cities_train()
 trainX, trainy = knn_cities_train(city_code, 3)
 
-# Select model
-if model_type == "random forest":
-    model = RandomForestRegressor(n_estimators=100, criterion='mse', min_samples_split = math.ceil(math.log2(trainX.size)))
-elif model_type == "linear regression":
-    model = LinearRegression()
-elif model_type == "svm":
-    model = SVR(kernel='rbf', C=100, gamma='scale', epsilon=.1)
-else:
-    print("model_type error")
-    exit(-1)
+# Select model and learn
+model = select_model(model_type)
 
-#learn
-model.fit(trainX, trainy)
+if model_type == "lstm":
+    model.fit(trainX, trainy, epochs=100, batch_size=1, verbose=2)
+else:
+    model.fit(trainX, trainy)
 if model_type == "random forest":
     print('importances', model.feature_importances_) # optional to RandomForestRegressor
 
