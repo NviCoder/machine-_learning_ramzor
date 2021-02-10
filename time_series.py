@@ -12,14 +12,14 @@ from keras.layers import Dense
 from keras.layers import LSTM
 
 #select params
-city_code = 473
-window_size = 3
-look_forward = 7
+city_code = 5000
+window_size = 5
+look_forward = 3
 train_ratio = 0.75
 split_date = None
 #model_type = "random forest"
-#model_type = "linear regression"
-model_type = "svm"
+model_type = "linear regression"
+#model_type = "svm"
 #model_type = "lstm"
 
 def select_model(model_type):
@@ -36,6 +36,7 @@ def select_model(model_type):
         model.add(LSTM(4, input_shape=(1, window_size)))
         model.add(Dense(1))
         model.compile(loss='mean_squared_error', optimizer='adam')
+        return model
     print("model_type error")
     return None
 
@@ -149,8 +150,12 @@ def one_city_train_test(city_code):
         split_date = ds_city.iloc[int(len(ds_city) * train_ratio)]['Date']
         current_ratio = train_ratio
     else:
-        fist_test_row = ds_city.index[ds_city['Date'] == split_date].to_list()[0]
-        current_ratio = (fist_test_row - ds_city.index.to_list()[0]) / float(len(ds_city))
+        test_list = ds_city.index[ds_city['Date'] == split_date].to_list()
+        if not test_list:
+            current_ratio = 0
+        else:
+            fist_test_row = ds_city.index[ds_city['Date'] == split_date].to_list()[0]
+            current_ratio = (fist_test_row - ds_city.index.to_list()[0]) / float(len(ds_city))
 
     ds_city.set_index('Date', inplace=True)
     ds_city = series_to_supervised(ds_city, window_size, look_forward)
@@ -184,7 +189,7 @@ def train_by_cities_list(cities):
 # Split train-test
 trainX, trainy, testX, testy = one_city_train_test(city_code)
 #trainX, trainy = all_cities_train()
-trainX, trainy = knn_cities_train(city_code, 3)
+trainX, trainy = knn_cities_train(city_code, 5)
 
 # Select model and learn
 model = select_model(model_type)
