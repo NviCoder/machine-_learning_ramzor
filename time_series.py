@@ -18,6 +18,10 @@ split_date = None
 #model_type = "linear regression"
 model_type = "svm"
 
+#read data set
+ds = pd.read_csv("ramzor2.csv", sep=",", header=0)
+
+
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
     """
     Frame a time series as a supervised learning dataset.
@@ -158,7 +162,6 @@ def train_by_cities_list(cities):
 
 
 # Split train-test
-ds = pd.read_csv("ramzor2.csv", sep=",", header=0)
 trainX, trainy, testX, testy = one_city_train_test(city_code)
 #trainX, trainy = all_cities_train()
 #trainX, trainy = knn_cities_train(city_code, 3)

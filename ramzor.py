@@ -33,10 +33,12 @@ data_covid["Cumulative_verified_cases"] = pd.to_numeric(data_covid["Cumulative_v
 data_covid[["Ni","Pi","Gi","Rank"]] = -1.0
 
 data_pop = pd.read_csv("population.csv", sep=",", header=0)
+processed_pop = pd.read_csv("population_for_cpa.csv", sep=",", header=0)
 
 #drop cities with no data about population
 data_pop = data_pop.dropna(subset=['popTot'])
 data_covid = data_covid.drop(data_covid[~data_covid.City_Code.isin(data_pop.city_code)].index)
+data_covid = data_covid.drop(data_covid[~data_covid.City_Code.isin(processed_pop.city_code)].index)
 #drop rows with <15 verified
 data_covid.drop(data_covid[(data_covid['Cumulative_verified_cases']  < 15)].index, inplace=True)
 data_covid.reset_index(drop=True, inplace=True)
