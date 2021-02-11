@@ -2,19 +2,8 @@
 import pandas as pd
 import numpy as np
 import math
-from sklearn.preprocessing import normalize
-#from sklearn.decomposition import PCA
+from sklearn.preprocessing import MinMaxScaler
 
-
-"""#distances for city X
-CITY_CODE = "5000"
-DAT = 4
-COORDINATES1 = 18027
-COORDINATES2 = 66486 
-
-#Distance function
-def l_2(x, y):
-    return math.sqrt(sum(map(lambda a, b: (a - b) ** 2, x, y)))"""
 
 #Clean the population.csv file
 data_population = pd.read_csv("population.csv", sep=",", header=0)
@@ -56,14 +45,11 @@ for index, row in data_population.iterrows():
 data_population.drop(["coordinates", "popTot"],axis='columns', inplace=True)
 data_population.set_index('city_code', inplace=True)
 
-'''
-#Exem the function
-for index, row in data_population.iterrows():
-    data_population.at[index, 'distance'] = l_2(COORDINATES1,row['coordinates1']) + l_2(COORDINATES2,row['coordinates2'])
-'''
 
 #normalize data
-
+sclr = MinMaxScaler()
+for col in data_population.head():
+    data_population[col] = sclr.fit_transform(data_population[[col]])
 
 #Generate the csv file
 data_population.to_csv('population_for_cpa.csv', sep=',')

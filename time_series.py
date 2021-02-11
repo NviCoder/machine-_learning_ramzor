@@ -12,13 +12,15 @@ from keras.layers import Dense
 from keras.layers import LSTM
 
 #select params
-city_code = 5000
-window_size = 5
+city_code = 1340
+window_size = 3
 look_forward = 3
 train_ratio = 0.75
+knn = 5 # set -1 for all the cities
 split_date = None
-#model_type = "random forest"
-model_type = "linear regression"
+
+model_type = "random forest"
+#model_type = "linear regression"
 #model_type = "svm"
 #model_type = "lstm"
 
@@ -175,6 +177,7 @@ def knn_cities_train(city_code, top_k):
         return all_cities_train()
     sort_by_dis = sorted(enumerate(cities), key=(lambda y: l2_cities(y[1], city_code)))
     head_of_list = [sort_by_dis[i][1] for i in range(top_k)]
+    print(head_of_list)
     return train_by_cities_list(head_of_list)
 
 def train_by_cities_list(cities):
@@ -188,8 +191,10 @@ def train_by_cities_list(cities):
 
 # Split train-test
 trainX, trainy, testX, testy = one_city_train_test(city_code)
-#trainX, trainy = all_cities_train()
-trainX, trainy = knn_cities_train(city_code, 5)
+if knn == -1:
+    trainX, trainy = all_cities_train()
+elif knn > 1:
+    trainX, trainy = knn_cities_train(city_code, knn)
 
 # Select model and learn
 model = select_model(model_type)
