@@ -12,16 +12,16 @@ from keras.layers import Dense
 from keras.layers import LSTM
 
 #select params
-city_code = 1340
+city_code = 3000
 window_size = 3
 look_forward = 3
 train_ratio = 0.75
-knn = 5 # set -1 for all the cities
+knn = 1 # set -1 for all the cities
 split_date = None
 
-model_type = "random forest"
+#model_type = "random forest"
 #model_type = "linear regression"
-#model_type = "svm"
+model_type = "svm"
 #model_type = "lstm"
 
 def select_model(model_type):
@@ -45,6 +45,7 @@ def select_model(model_type):
 #read data set
 ds = pd.read_csv("ramzor2.csv", sep=",", header=0)
 proc_pop = pd.read_csv("population_for_cpa.csv", sep=",", header=0)
+proc_pop = proc_pop.drop(proc_pop[~proc_pop.city_code.isin(ds.City_Code)].index)
 proc_pop.set_index('city_code', inplace=True)
 
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
@@ -134,13 +135,8 @@ class AsLastColumn:
     def predict(self, x):
         return x[:,-1]
 
-def read_pop():
-    data_pop = pd.read_csv("population.csv", sep=",", header=0)
-    # TODO drop cities not in ds_city
-    return data_pop.dropna(subset=['popTot'])
-
 def get_all_cities_list():
-    return read_pop()['city_code']
+    return proc_pop.index.values.tolist()
 
 def one_city_train_test(city_code):
     ds_city = filter_by_city(city_code)
@@ -173,11 +169,11 @@ def l2_cities(city_code1, city_code2):
 
 def knn_cities_train(city_code, top_k):
     cities = get_all_cities_list()
-    if top_k > cities.size:
+    if top_k > len(cities):
         return all_cities_train()
     sort_by_dis = sorted(enumerate(cities), key=(lambda y: l2_cities(y[1], city_code)))
     head_of_list = [sort_by_dis[i][1] for i in range(top_k)]
-    print(head_of_list)
+    print(top_k, "nearest neighbor cities:", head_of_list)
     return train_by_cities_list(head_of_list)
 
 def train_by_cities_list(cities):
@@ -207,8 +203,8 @@ if model_type == "random forest":
     print('importances', model.feature_importances_) # optional to RandomForestRegressor
 
 #prediction
-predictions = predict_static(model, testX)
-#predictions = predict_adaptive(model, trainX, trainy, testX, testy)
+#predictions = predict_static(model, testX)
+predictions = predict_adaptive(model, trainX, trainy, testX, testy)
 
 error = mean_squared_error(testy, predictions)
 print("model error:", error)
