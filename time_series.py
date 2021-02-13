@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import math
 from matplotlib import pyplot
-from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
@@ -10,18 +9,20 @@ from sklearn.svm import SVR
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
+from sklearn.preprocessing import MinMaxScaler
 
 #select params
 city_code = 3000
 window_size = 3
-look_forward = 3
+look_forward = 1
 train_ratio = 0.75
 knn = 1 # set -1 for all the cities
 split_date = None
+adaptive = False
 
 #model_type = "random forest"
-#model_type = "linear regression"
-model_type = "svm"
+model_type = "linear regression"
+#model_type = "svm"
 #model_type = "lstm"
 
 def select_model(model_type):
@@ -196,15 +197,22 @@ elif knn > 1:
 model = select_model(model_type)
 
 if model_type == "lstm":
-    model.fit(trainX, trainy, epochs=100, batch_size=1, verbose=2)
+    # reshape input to be [samples, time steps, features]
+    print(window_size, trainX.shape[0], 1)
+    trainX = np.reshape(trainX, (window_size, trainX.shape[0], 1))
+    testX = np.reshape(testX, (window_size, testX.shape[0], 1))
+
+    model.fit(trainX, trainy, epochs=5, batch_size=1, verbose=2)
 else:
     model.fit(trainX, trainy)
 if model_type == "random forest":
     print('importances', model.feature_importances_) # optional to RandomForestRegressor
 
 #prediction
-#predictions = predict_static(model, testX)
-predictions = predict_adaptive(model, trainX, trainy, testX, testy)
+if adaptive:
+    predictions = predict_adaptive(model, trainX, trainy, testX, testy)
+else:
+    predictions = predict_static(model, testX)
 
 error = mean_squared_error(testy, predictions)
 print("model error:", error)
