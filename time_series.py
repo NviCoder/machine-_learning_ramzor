@@ -12,18 +12,19 @@ from keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
 
 #select params
-city_code = 3000
+city_code = 2640
 window_size = 3
-look_forward = 1
+look_forward = 3
 train_ratio = 0.75
-knn = 1 # set -1 for all the cities
-split_date = None
+knn = 5 # set -1 for all the cities
 adaptive = False
 
 #model_type = "random forest"
-model_type = "linear regression"
+#model_type = "linear regression"
 #model_type = "svm"
-#model_type = "lstm"
+model_type = "lstm"
+
+split_date = None
 
 def select_model(model_type):
     if model_type == "random forest":
@@ -106,8 +107,11 @@ def predict_static(model, testX):
     :return: List of predictions
     """
     predictions = list()
-    for i in range(len(testX)):
-        predictions.append(model.predict(testX[i].reshape(1, -1)))
+    if model_type != "lstm":
+        for i in range(len(testX)):
+            predictions.append(model.predict(testX[i].reshape(1, -1)))
+    else:
+        predictions = model.predict(testX)
     return predictions
 
 def predict_adaptive(model, trainX, trainy, testX, testy):
@@ -193,16 +197,21 @@ if knn == -1:
 elif knn > 1:
     trainX, trainy = knn_cities_train(city_code, knn)
 
+# monkey model learning
+model_monkey = AsLastColumn()
+predictions_monkey = predict_static(model_monkey, testX)
+error_monkey = mean_squared_error(testy, predictions_monkey)
+print("monkey error:", error_monkey)
+
 # Select model and learn
 model = select_model(model_type)
 
 if model_type == "lstm":
     # reshape input to be [samples, time steps, features]
-    print(window_size, trainX.shape[0], 1)
-    trainX = np.reshape(trainX, (window_size, trainX.shape[0], 1))
-    testX = np.reshape(testX, (window_size, testX.shape[0], 1))
+    trainX = np.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
+    testX = np.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
 
-    model.fit(trainX, trainy, epochs=5, batch_size=1, verbose=2)
+    model.fit(trainX, trainy, epochs=25, batch_size=1, verbose=2)
 else:
     model.fit(trainX, trainy)
 if model_type == "random forest":
@@ -217,15 +226,9 @@ else:
 error = mean_squared_error(testy, predictions)
 print("model error:", error)
 
-# monkey model learning
-model_monkey = AsLastColumn()
-predictions_monkey = predict_static(model_monkey, testX)
-error_monkey = mean_squared_error(testy, predictions_monkey)
-print("monkey error:", error_monkey)
-
 # plot expected vs predicted vs monkey
 pyplot.plot(testy, label='Expected')
 pyplot.plot(predictions, label='Predicted')
-pyplot.plot(predictions_monkey, label='Monkey')
+pyplot.plot(predictions_monkey, label='Monkey', color='black')
 pyplot.legend()
 pyplot.show()
