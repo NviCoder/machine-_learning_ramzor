@@ -24,9 +24,10 @@ adaptive = False
 
 
 
+models =["random forest", "linear regression", "svm"]
 
 #model_type = "random forest"
-model_type = "linear regression"
+#model_type = "linear regression"
 #model_type = "svm"
 #model_type = "lstm"
 
@@ -130,9 +131,13 @@ def predict_static(model, testX):
     :param testX: List of data to predict
     :return: List of predictions
     """
+
     predictions = list()
-    for i in range(len(testX)):
-        predictions.append(model.predict(testX[i].reshape(1, -1)))
+    if model_type != "lstm":
+        for i in range(len(testX)):
+            predictions.append(model.predict(testX[i].reshape(1, -1)))
+    else:
+        predictions = model.predict(testX)
     return predictions
 
 
@@ -220,56 +225,94 @@ def train_by_cities_list(cities):
         trainy = np.append(trainy, trainy_city)
     return trainX, trainy
 
-counter = 1
+#preperment for result
+    '''
 
-for city_code in random_cities_list:
-    print("=======================================================================================")
-    # Split train-test
-    trainX, trainy, testX, testy = one_city_train_test(city_code)
-    if knn == -1:
-        trainX, trainy = all_cities_train()
-    elif knn > 1:
-        trainX, trainy = knn_cities_train(city_code, knn)
+    ''' 
+counter = 0
+result = pd.DataFrame({
+                    'model':[' '],
+                    'number of cities': [str(len(random_cities_list))],
+                    'window':[str(window_size)],
+                    'look_forward':[str(look_forward)],
+                    'train_ratio':[str(train_ratio)],
+                    'knn':[str(knn)],
+                    'adaptive':[str(adaptive)],
+                    '   ====>  ':[' '],
+                    'avg_error_model': ['0']
+                        })
 
-    # Select model and learn
-    model = select_model(model_type)
+for model_type in models:
+    print("model type: ",model_type)
+    
+    sum_error_model = 0
+    sum_error_monkey  = 0
 
-    if model_type == "lstm":
-        # reshape input to be [samples, time steps, features]
-        print(window_size, trainX.shape[0], 1)
-        trainX = np.reshape(trainX, (window_size, trainX.shape[0], 1))
-        testX = np.reshape(testX, (window_size, testX.shape[0], 1))
+    for city_code in random_cities_list:
+        
+        # Split train-test
+        trainX, trainy, testX, testy = one_city_train_test(city_code)
+        if knn == -1:
+            trainX, trainy = all_cities_train()
+        elif knn > 1:
+            trainX, trainy = knn_cities_train(city_code, knn)
 
-        model.fit(trainX, trainy, epochs=5, batch_size=1, verbose=2)
-    else:
-        model.fit(trainX, trainy)
-    if model_type == "random forest":
-        # optional to RandomForestRegressor
-        print('importances', model.feature_importances_)
+        # Select model and learn
+        model = select_model(model_type)
 
-    #Iteration number  + city code
+        if model_type == "lstm":
+            # reshape input to be [samples, time steps, features]
+            trainX = np.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
+            testX = np.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
 
-    print("Iteration: ",counter," For city: ",city_code)
-    # prediction
-    if adaptive:
-        predictions = predict_adaptive(model, trainX, trainy, testX, testy)
-    else:
-        predictions = predict_static(model, testX)
+            model.fit(trainX, trainy, epochs=25, batch_size=1, verbose=2)
+        else:
+            model.fit(trainX, trainy)
+        if model_type == "random forest":
+            # optional to RandomForestRegressor
+            print('importances', model.feature_importances_)
 
-    error = mean_squared_error(testy, predictions)
-    print("model error:", error)
+        #Iteration number  + city code
 
-    # monkey model learning
-    model_monkey = AsLastColumn()
-    predictions_monkey = predict_static(model_monkey, testX)
-    error_monkey = mean_squared_error(testy, predictions_monkey)
-    print("monkey error:", error_monkey)
+        #print("Iteration: ",counter," For city: ",city_code)
+        # prediction
+        if adaptive:
+            predictions = predict_adaptive(model, trainX, trainy, testX, testy)
+        else:
+            predictions = predict_static(model, testX)
+
+        error = mean_squared_error(testy, predictions)
+        sum_error_model = sum_error_model + error
+        #print("model error:", error)
+        
+
+        # monkey model learning
+        model_monkey = AsLastColumn()
+        predictions_monkey = predict_static(model_monkey, testX)
+        error_monkey = mean_squared_error(testy, predictions_monkey)
+        sum_error_monkey = sum_error_monkey + error_monkey
+        #print("monkey error:", error_monkey)
+        
+        print("sum_error_model: ", sum_error_model)
+        # plot expected vs predicted vs monkey
+        '''
+        pyplot.plot(testy, label='Expected')
+        pyplot.plot(predictions, label='Predicted')
+        pyplot.plot(predictions_monkey, label='Monkey')
+        pyplot.legend()
+        pyplot.show()
+        '''
+    avg_error_model = sum_error_model / len(random_cities_list)
+    avg_error_monkey = sum_error_monkey / len(random_cities_list)
+    result.at[counter, 'avg_error_model'] = avg_error_model
+    #result.at[counter, 'avg_error_monkey'] = avg_error_monkey
+    result.at[counter, 'model'] = model_type
+
+
     counter = counter + 1
-    # plot expected vs predicted vs monkey
-    '''
-    pyplot.plot(testy, label='Expected')
-    pyplot.plot(predictions, label='Predicted')
-    pyplot.plot(predictions_monkey, label='Monkey')
-    pyplot.legend()
-    pyplot.show()
-    '''
+result.at[counter, 'model'] = "monkey"
+result.at[counter, 'avg_error_model'] = avg_error_monkey
+
+
+result.to_csv('result.csv', sep=',')
+print("success!")

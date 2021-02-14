@@ -1,0 +1,5 @@
+,model,number of cities,window,look_forward,train_ratio,knn,adaptive,   ====>  ,avg_error_model
+0,random forest,20,5,1,0.8,1,False, ,1.364291052281075
+1,linear regression,,,,,,,,0.8397469629067553
+2,svm,,,,,,,,2.468766136679143
+3,monkey,,,,,,,,0.7697513803827223
