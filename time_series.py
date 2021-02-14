@@ -166,9 +166,6 @@ class AsLastColumn:
         return x[:, -1]
 
 
-
-
-
 def one_city_train_test(city_code):
     ds_city = filter_by_city(city_code)
     ds_city.drop(['index', 'City_Code', 'Cumulative_verified_cases',
