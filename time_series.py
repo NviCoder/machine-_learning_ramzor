@@ -10,6 +10,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
+from random import sample
 
 #select params
 city_code = 2800
@@ -189,12 +190,15 @@ def train_by_cities_list(cities):
         trainy = np.append(trainy, trainy_city)
     return trainX, trainy
 
-def knn_cities_train(city_code, top_k):
+def knn_cities_train(city_code, top_k, random_sample = False):
     cities = get_all_cities_list()
     if top_k > len(cities):
         return all_cities_train()
     sort_by_dis = sorted(enumerate(cities), key=(lambda y: l2_cities(y[1], city_code)))
-    head_of_list = [sort_by_dis[i][1] for i in range(top_k)]
+    if (random_sample):
+        head_of_list = [city_code] + sample(cities, top_k - 1)
+    else:
+        head_of_list = [sort_by_dis[i][1] for i in range(top_k)]
     print(top_k, "nearest neighbor cities:", head_of_list)
     return train_by_cities_list(head_of_list)
 
