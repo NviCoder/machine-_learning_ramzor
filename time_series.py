@@ -11,6 +11,7 @@ from keras.layers import Dense
 from keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
 from random import sample
+from copy import deepcopy
 
 
 #read datasets
@@ -28,8 +29,8 @@ random_cities_list = sample(all_cities,20)
 
 #select params
 #city_code = 2640
-window_size = 5
-#look_forward = 1
+window_size = 3
+#look_forward = 0
 train_ratio = 0.8
 knn = 1 # set -1 for all the cities
 adaptive = False
@@ -39,14 +40,13 @@ adaptive = False
 #model_type = "svm"
 #model_type = "lstm"
 
-split_date = None
-#for model_type in ["random forest", "linear regression", "svm", "lstm"]:
-for model_type in ["lstm"]:
-    for look_forward in range (1,6):
-        #iterate random cities
+for model_type in ["random forest", "linear regression", "svm", "lstm"]:
+    for look_forward in range(1,6):
+    # iterate random cities
         sum_error_model = 0.0
         sum_error_monkey = 0.0
         for city_code in random_cities_list:
+            split_date = None
 
             def select_model(model_type):
                 if model_type == "random forest":
@@ -185,13 +185,16 @@ for model_type in ["lstm"]:
                 vec2 = proc_pop.loc[city_code2]
                 return mean_squared_error(vec1, vec2)
 
-            def knn_cities_train(city_code, top_k):
+            def knn_cities_train(city_code, top_k, random_sample = False):
                 cities = get_all_cities_list()
                 if top_k > len(cities):
                     return all_cities_train()
-                sort_by_dis = sorted(enumerate(cities), key=(lambda y: l2_cities(y[1], city_code)))
-                head_of_list = [sort_by_dis[i][1] for i in range(top_k)]
-                print(top_k, "nearest neighbor cities:", head_of_list)
+                if (random_sample):
+                    head_of_list = [city_code] + sample(cities,top_k-1)
+                else:
+                    sort_by_dis = sorted(enumerate(cities), key=(lambda y: l2_cities(y[1], city_code)))
+                    head_of_list = [sort_by_dis[i][1] for i in range(top_k)]
+                #print(top_k, "nearest neighbor cities:", head_of_list)
                 return train_by_cities_list(head_of_list)
 
             def train_by_cities_list(cities):
@@ -205,6 +208,7 @@ for model_type in ["lstm"]:
 
             # Split train-test
             trainX, trainy, testX, testy = one_city_train_test(city_code)
+            #testX, testy = deepcopy(trainX), deepcopy(trainy)
             if knn == -1:
                 trainX, trainy = all_cities_train()
             elif knn > 1:
@@ -250,4 +254,4 @@ for model_type in ["lstm"]:
         pyplot.show()'''
 
         avg_model_error = sum_error_model / len(random_cities_list)
-        print(model_type, look_forward, avg_model_error)
+        print(model_type, adaptive, avg_model_error)
