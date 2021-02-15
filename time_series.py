@@ -34,7 +34,7 @@ random_cities_list = sample(all_cities,20)
 #select params
 #city_code = 2640
 window_size = 3
-#look_forward = 3
+#look_forward = 5
 train_ratio = 0.8
 knn = 1 # set -1 for all the cities
 adaptive = False
@@ -45,11 +45,12 @@ learn_pop_properties = False
 #model_type = "svm"
 #model_type = "lstm"
 
-for model_type in ["random forest", "linear regression", "svm", "lstm"]:
-    for look_forward in range(1,6):
-    # iterate random cities
+#for model_type in ["random forest", "linear regression", "svm", "lstm"]:
+for model_type in ["svm"]:
+    for look_forward in [5]:
         sum_error_model = 0.0
         sum_error_monkey = 0.0
+        # iterate random cities
         for city_code in random_cities_list:
             split_date = None
 
@@ -220,7 +221,7 @@ for model_type in ["random forest", "linear regression", "svm", "lstm"]:
 
             # Split train-test
             trainX, trainy, testX, testy = one_city_train_test(city_code)
-            testX, testy = deepcopy(trainX), deepcopy(trainy)
+            #testX, testy = deepcopy(trainX), deepcopy(trainy)
             if knn == -1:
                 trainX, trainy = all_cities_train()
             elif knn > 1:
@@ -255,7 +256,7 @@ for model_type in ["random forest", "linear regression", "svm", "lstm"]:
                 predictions = predict_static(model, testX)
 
             error = mean_squared_error(testy, predictions)
-            #print("model error:", error)
+            print("model error:", error, "city code", city_code)
             sum_error_model += error
 
         '''# plot expected vs predicted vs monkey
