@@ -203,7 +203,10 @@ for model_type in ["random forest", "linear regression", "svm", "lstm"]:
                 return train_by_cities_list(head_of_list)
 
             def train_by_cities_list(cities):
-                trainX, trainy = np.empty(shape=(0, window_size)), np.empty(shape=(1, 0))
+                if learn_pop_properties:
+                    trainX, trainy = np.empty(shape=(0, window_size + proc_pop.shape[1])), np.empty(shape=(1, 0))
+                else:
+                    trainX, trainy = np.empty(shape=(0, window_size)), np.empty(shape=(1, 0))
                 for city in cities:
                     trainX_city, trainy_city, _, _ = one_city_train_test(city)
                     trainX = np.concatenate((trainX, trainX_city), axis=0)
