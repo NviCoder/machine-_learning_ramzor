@@ -13,17 +13,17 @@ from sklearn.preprocessing import MinMaxScaler
 from random import sample
 
 #select params
-city_code = 2800
+city_code = 3779
 window_size = 3
-look_forward = 3
+look_forward = 5
 train_ratio = 0.8
-knn = 5 # set -1 for all the cities
-learn_pop_properties = True
+knn = 1 # set -1 for all the cities
+learn_pop_properties = False
 adaptive = False
 
-model_type = "random forest"
+#model_type = "random forest"
 #model_type = "linear regression"
-#model_type = "svm"
+model_type = "svm"
 #model_type = "lstm"
 
 split_date = None
@@ -234,6 +234,9 @@ if adaptive:
     predictions = predict_adaptive(model, trainX, trainy, testX, testy)
 else:
     predictions = predict_static(model, testX)
+
+#bound predictions to the interval [2,10]
+predictions = [[max(min(x[0],10),2)] for x in predictions]
 
 error = mean_squared_error(testy, predictions)
 print("model error:", error)
