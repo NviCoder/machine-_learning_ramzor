@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import tensorflow as tf
 import math
 from matplotlib import pyplot
 from sklearn.metrics import mean_squared_error
@@ -10,9 +11,12 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
-from random import sample
+from random import sample, seed
 from copy import deepcopy
 
+
+np.random.seed(42)
+seed(42)
 
 #read datasets
 ds = pd.read_csv("ramzor2.csv", sep=",", header=0)
@@ -30,7 +34,7 @@ random_cities_list = sample(all_cities,20)
 #select params
 #city_code = 2640
 window_size = 3
-#look_forward = 0
+#look_forward = 3
 train_ratio = 0.8
 knn = 1 # set -1 for all the cities
 adaptive = False
@@ -216,7 +220,7 @@ for model_type in ["random forest", "linear regression", "svm", "lstm"]:
 
             # Split train-test
             trainX, trainy, testX, testy = one_city_train_test(city_code)
-            #testX, testy = deepcopy(trainX), deepcopy(trainy)
+            testX, testy = deepcopy(trainX), deepcopy(trainy)
             if knn == -1:
                 trainX, trainy = all_cities_train()
             elif knn > 1:
@@ -262,4 +266,4 @@ for model_type in ["random forest", "linear regression", "svm", "lstm"]:
         pyplot.show()'''
 
         avg_model_error = sum_error_model / len(random_cities_list)
-        print(model_type, adaptive, avg_model_error)
+        print(model_type, look_forward, avg_model_error)
