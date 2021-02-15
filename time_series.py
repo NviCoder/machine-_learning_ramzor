@@ -12,17 +12,18 @@ from keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
 
 #select params
-city_code = 2640
+city_code = 2800
 window_size = 3
 look_forward = 3
-train_ratio = 0.75
+train_ratio = 0.8
 knn = 5 # set -1 for all the cities
+learn_pop_properties = True
 adaptive = False
 
-#model_type = "random forest"
+model_type = "random forest"
 #model_type = "linear regression"
 #model_type = "svm"
-model_type = "lstm"
+#model_type = "lstm"
 
 split_date = None
 
@@ -162,6 +163,10 @@ def one_city_train_test(city_code):
 
     ds_city.set_index('Date', inplace=True)
     ds_city = series_to_supervised(ds_city, window_size, look_forward)
+    if learn_pop_properties:
+        pop_data = proc_pop.loc[city_code]
+        for idx,feature in enumerate(pop_data.index.values):
+            ds_city.insert(loc=idx, column=feature, value=pop_data[feature])
     return split_train_test(ds_city, current_ratio, look_forward)
 
 def all_cities_train():
@@ -172,6 +177,18 @@ def l2_cities(city_code1, city_code2):
     vec2 = proc_pop.loc[city_code2]
     return mean_squared_error(vec1, vec2)
 
+
+def train_by_cities_list(cities):
+    if learn_pop_properties:
+        trainX, trainy = np.empty(shape=(0, window_size + proc_pop.shape[1])), np.empty(shape=(1, 0))
+    else:
+        trainX, trainy = np.empty(shape=(0, window_size)), np.empty(shape=(1, 0))
+    for city in cities:
+        trainX_city, trainy_city, _, _ = one_city_train_test(city)
+        trainX = np.concatenate((trainX, trainX_city), axis=0)
+        trainy = np.append(trainy, trainy_city)
+    return trainX, trainy
+
 def knn_cities_train(city_code, top_k):
     cities = get_all_cities_list()
     if top_k > len(cities):
@@ -180,15 +197,6 @@ def knn_cities_train(city_code, top_k):
     head_of_list = [sort_by_dis[i][1] for i in range(top_k)]
     print(top_k, "nearest neighbor cities:", head_of_list)
     return train_by_cities_list(head_of_list)
-
-def train_by_cities_list(cities):
-    trainX, trainy = np.empty(shape=(0, window_size)), np.empty(shape=(1, 0))
-    for city in cities:
-        trainX_city, trainy_city, _, _ = one_city_train_test(city)
-        trainX = np.concatenate((trainX, trainX_city), axis=0)
-        trainy = np.append(trainy, trainy_city)
-    return trainX, trainy
-
 
 # Split train-test
 trainX, trainy, testX, testy = one_city_train_test(city_code)
@@ -227,8 +235,8 @@ error = mean_squared_error(testy, predictions)
 print("model error:", error)
 
 # plot expected vs predicted vs monkey
-pyplot.plot(testy, label='Expected')
-pyplot.plot(predictions, label='Predicted')
-pyplot.plot(predictions_monkey, label='Monkey', color='black')
+pyplot.plot(testy, label='Expected', color='blue')
+pyplot.plot(predictions, label='Predicted', color='red')
+pyplot.plot(predictions_monkey, label='Shifting', color='yellow')
 pyplot.legend()
 pyplot.show()
