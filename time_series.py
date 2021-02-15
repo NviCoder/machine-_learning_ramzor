@@ -34,6 +34,7 @@ window_size = 3
 train_ratio = 0.8
 knn = 1 # set -1 for all the cities
 adaptive = False
+learn_pop_properties = False
 
 #model_type = "random forest"
 #model_type = "linear regression"
@@ -175,6 +176,10 @@ for model_type in ["random forest", "linear regression", "svm", "lstm"]:
 
                 ds_city.set_index('Date', inplace=True)
                 ds_city = series_to_supervised(ds_city, window_size, look_forward)
+                if learn_pop_properties:
+                    pop_data = proc_pop.loc[city_code]
+                    for idx, feature in enumerate(pop_data.index.values):
+                        ds_city.insert(loc=idx, column=feature, value=pop_data[feature])
                 return split_train_test(ds_city, current_ratio, look_forward)
 
             def all_cities_train():
